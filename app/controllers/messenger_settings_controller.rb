@@ -10,7 +10,7 @@ class MessengerSettingsController < ApplicationController
       flash[:notice] = l :notice_successful_update
       redirect_to settings_project_path(@project, tab: 'messenger')
     else
-      flash[:error] = setting.errors.full_messages.flatten.join "\n"
+      flash[:error] = setting.errors.full_messages.join "\n"
       respond_to do |format|
         format.html { redirect_to settings_project_path(@project, tab: 'messenger') }
         format.api  { render_validation_errors setting }
