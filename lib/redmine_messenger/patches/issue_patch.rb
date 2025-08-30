@@ -92,26 +92,47 @@ module RedmineMessenger
               attachment[:text] = attachment_text if attachment_text.present?
             end
 
-            # Show only key changes and comments
+            # Show key changes and comments
             fields = []
+            
+            # Add due date change
+            due_date_detail = current_journal.details.find { |d| d.prop_key == 'due_date' }
+            if due_date_detail
+              old_date = due_date_detail.old_value.present? ? format_date(due_date_detail.old_value) : "未設定"
+              new_date = due_date_detail.value.present? ? format_date(due_date_detail.value) : "未設定"
+              fields << { title: "期日",
+                          value: "#{old_date} → #{new_date}",
+                          short: true }
+            end
+            
+            # Add assigned_to change
+            assigned_detail = current_journal.details.find { |d| d.prop_key == 'assigned_to_id' }
+            if assigned_detail
+              old_user = assigned_detail.old_value.present? ? Principal.find_by(id: assigned_detail.old_value)&.name : "未設定"
+              new_user = assigned_detail.value.present? ? Principal.find_by(id: assigned_detail.value)&.name : "未設定"
+              fields << { title: "担当者",
+                          value: "#{old_user} → #{new_user}",
+                          short: true }
+            end
             
             # Add progress if changed
             progress_detail = current_journal.details.find { |d| d.prop_key == 'done_ratio' }
-            if progress_detail && progress_detail.value.present?
+            if progress_detail
+              old_progress = progress_detail.old_value.present? ? "#{progress_detail.old_value}%" : "0%"
+              new_progress = progress_detail.value.present? ? "#{progress_detail.value}%" : "0%"
               fields << { title: "進捗率",
-                          value: "#{progress_detail.value}%",
-                          short: false }
+                          value: "#{old_progress} → #{new_progress}",
+                          short: true }
             end
             
             # Add status change
             status_detail = current_journal.details.find { |d| d.prop_key == 'status_id' }
-            if status_detail && status_detail.value.present?
-              status_obj = IssueStatus.find_by(id: status_detail.value)
-              if status_obj
-                fields << { title: "ステータス",
-                            value: Messenger.markup_format(status_obj.name),
-                            short: true }
-              end
+            if status_detail
+              old_status = status_detail.old_value.present? ? IssueStatus.find_by(id: status_detail.old_value)&.name : "未設定"
+              new_status = status_detail.value.present? ? IssueStatus.find_by(id: status_detail.value)&.name : "未設定"
+              fields << { title: "ステータス",
+                          value: "#{old_status} → #{new_status}",
+                          short: true }
             end
             
             # Add comments
@@ -142,6 +163,15 @@ module RedmineMessenger
 
         private
 
+        def format_date(date_str)
+          return date_str unless date_str.present?
+          begin
+            Date.parse(date_str).strftime("%Y/%m/%d")
+          rescue
+            date_str
+          end
+        end
+
         def messenger_to_be_notified
           to_be_notified = (notified_users + notified_watchers).compact
           to_be_notified.uniq
@@ -150,17 +180,20 @@ module RedmineMessenger
         def build_mentions_message
           mentions = []
           
-          # Add assignee mention
-          if assigned_to.present?
+          # Only add assignee mention if there's no assignee change in this update
+          # (to avoid duplicate information)
+          assignee_changed = current_journal&.details&.any? { |d| d.prop_key == 'assigned_to_id' }
+          
+          if assigned_to.present? && !assignee_changed
             assignee_mention = Messenger.format_user_mention(assigned_to)
             mentions << "\n\n担当者: #{assignee_mention}" if assignee_mention.present?
           end
           
-          # Add watcher mentions
+          # Add watcher mentions with proper label
           if watcher_users.any?
             watcher_mentions = watcher_users.map { |user| Messenger.format_user_mention(user) }.compact
             if watcher_mentions.any?
-              mentions << "\n#{watcher_mentions.join(' ')}\n\n"
+              mentions << "\nウォッチャー: #{watcher_mentions.join(' ')}"
             end
           end
           
