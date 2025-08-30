@@ -216,10 +216,48 @@ module RedmineMessenger
           custom_field = CustomField.find_by(id: detail.prop_key)
           return nil unless custom_field
           
-          old_value = detail.old_value.present? ? detail.old_value : "未設定"
-          new_value = detail.value.present? ? detail.value : "未設定"
+          old_value = format_custom_field_value(detail.old_value, custom_field)
+          new_value = format_custom_field_value(detail.value, custom_field)
           
           { title: custom_field.name, value: "#{old_value} → #{new_value}", short: true }
+        end
+
+        def format_custom_field_value(value, custom_field)
+          return "未設定" if value.blank?
+          
+          case custom_field.field_format
+          when 'bool'
+            value == '1' ? 'Yes' : 'No'
+          when 'date'
+            begin
+              Date.parse(value).strftime("%Y/%m/%d")
+            rescue
+              value
+            end
+          when 'float', 'int'
+            value.to_s
+          when 'list'
+            # For list custom fields, show the actual option value
+            custom_option = custom_field.custom_options.find_by(value: value)
+            custom_option ? custom_option.value : value
+          when 'user'
+            # For user custom fields
+            user = Principal.find_by(id: value)
+            user ? user.name : value
+          when 'version'
+            # For version custom fields
+            version = Version.find_by(id: value)
+            version ? version.name : value
+          when 'link'
+            # For link custom fields, show as-is
+            value
+          when 'text', 'string'
+            # For text and string, limit length for display
+            value.length > 50 ? "#{value[0..47]}..." : value
+          else
+            # Default case for any other format
+            value
+          end
         end
 
         def messenger_to_be_notified
