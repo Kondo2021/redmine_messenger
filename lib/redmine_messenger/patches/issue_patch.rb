@@ -34,15 +34,79 @@ module RedmineMessenger
             if description.present? && Messenger.setting_for_project(project, :new_include_description)
               attachment[:text] = Messenger.markup_format description
             end
-            # Show only essential fields
+            
+            # Show all relevant fields for new issues
             attachment[:fields] = []
             
+            # Add start date
+            if start_date.present?
+              attachment[:fields] << { title: "開始日",
+                                       value: format_date(start_date.to_s),
+                                       short: true }
+            end
+            
+            # Add due date
+            if due_date.present?
+              attachment[:fields] << { title: "期日",
+                                       value: format_date(due_date.to_s),
+                                       short: true }
+            end
+            
+            # Add estimated hours
+            if estimated_hours.present?
+              attachment[:fields] << { title: "予定工数",
+                                       value: "#{estimated_hours}h",
+                                       short: true }
+            end
+            
+            # Add status
+            if status.present?
+              attachment[:fields] << { title: "ステータス",
+                                       value: status.name,
+                                       short: true }
+            end
+            
+            # Add priority
+            if priority.present?
+              attachment[:fields] << { title: "優先度",
+                                       value: priority.name,
+                                       short: true }
+            end
+            
+            # Add category
+            if category.present?
+              attachment[:fields] << { title: "カテゴリ",
+                                       value: category.name,
+                                       short: true }
+            end
+            
+            # Add fixed version
+            if fixed_version.present?
+              attachment[:fields] << { title: "対象バージョン",
+                                       value: fixed_version.name,
+                                       short: true }
+            end
+            
+            # Add progress if greater than 0
             if done_ratio > 0
               attachment[:fields] << { title: "進捗率",
                                        value: "#{done_ratio}%",
-                                       short: false }
+                                       short: true }
+            end
+            
+            # Add custom fields
+            custom_field_values.each do |custom_value|
+              next unless custom_value.value.present?
+              
+              formatted_value = format_custom_field_value(custom_value.value, custom_value.custom_field)
+              next if formatted_value == "未設定"
+              
+              attachment[:fields] << { title: custom_value.custom_field.name,
+                                       value: formatted_value,
+                                       short: true }
             end
 
+            # Add attachments
             attachments.each do |att|
               attachment[:fields] << { title: I18n.t(:label_attachment),
                                        value: "<#{Messenger.object_url att}|#{ERB::Util.html_escape att.filename}>",
