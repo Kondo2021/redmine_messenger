@@ -268,15 +268,10 @@ class Messenger
         return "<@#{user.discord_user_id}>"
       end
       
-      # Fallback: use Discord username
-      if user.respond_to?(:discord_username) && user.discord_username.present?
-        return "@#{user.discord_username}"
-      end
-      
-      # Final fallback: use name without spaces or login
+      # Fallback: use name with bold formatting for visibility
       formatted_name = user.name.gsub(/\s+/, '') if user.name.present?
       formatted_name ||= user.login
-      "@#{formatted_name}"
+      "**@#{formatted_name}**"
     end
 
     def create_mentions_for_users(users)

@@ -8,16 +8,14 @@ module RedmineMessenger
       included do
         include InstanceMethods
         
-        safe_attributes 'discord_username', 'discord_user_id'
+        safe_attributes 'discord_user_id'
       end
 
       module InstanceMethods
         def discord_mention
-          # Discord uses <@user_id> format for mentions, not @username
+          # Discord uses <@user_id> format for mentions
           if discord_user_id.present?
             "<@#{discord_user_id}>"
-          elsif discord_username.present?
-            "@#{discord_username}"
           else
             nil
           end

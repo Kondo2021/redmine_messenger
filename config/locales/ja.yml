@@ -17,6 +17,7 @@ ja:
   label_messenger_time_entry_updated_with_issue: "%{project_url} - %{issue_url} の作業時間が *%{user}* によって更新されました"
   label_messenger_project_text_field_info: デフォルトの設定を使う場合空欄にしてください。
   label_messenger_setting: メッセンジャーの設定
+  label_messenger_settings: Discord通知
   label_messenger_settings_disabled: 無効
   label_messenger_settings_enabled: 有効
   label_messenger_wiki_created: "%{project_url} - Wiki %{url} が by *%{user}* によって作成されました。"
@@ -39,9 +40,7 @@ ja:
   label_settings_post_password: Password added?
   label_settings_post_time_entries: 作業時間記録の通知
   label_settings_post_time_entry_updates: 作業時間更新の通知
-  field_discord_username: Discordユーザー名
-  label_discord_username_info: Discord通知用のユーザー名（例：user123）
-  field_discord_user_id: DiscordユーザーID
+  field_discord_user_id: Discord ID
   label_discord_user_id_info: Discordの数字のユーザーID（例：123456789012345678）メンション機能に使用されます
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?

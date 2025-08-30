@@ -17,6 +17,7 @@ en:
   label_messenger_time_entry_updated_with_issue: "%{project_url} - Time entry for %{issue_url} updated by *%{user}*"
   label_messenger_project_text_field_info: Leave it blank for system default.
   label_messenger_setting: Messenger Settings
+  label_messenger_settings: Discord Notifications
   label_messenger_settings_disabled: Disabled
   label_messenger_settings_enabled: Enabled
   label_messenger_wiki_created: "%{project_url} - Wiki %{url} created by *%{user}*"
@@ -40,9 +41,7 @@ en:
   label_settings_post_password: Password added?
   label_settings_post_time_entries: Time entry notifications?
   label_settings_post_time_entry_updates: Time entry updates?
-  field_discord_username: Discord Username
-  label_discord_username_info: Your Discord username for notifications (e.g., user123)
-  field_discord_user_id: Discord User ID
+  field_discord_user_id: Discord ID
   label_discord_user_id_info: Your Discord numeric user ID (e.g., 123456789012345678) used for mentions
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?
