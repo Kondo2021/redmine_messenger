@@ -263,15 +263,13 @@ class Messenger
     def format_user_mention(user)
       return nil if user.blank?
       
-      # Use Discord user ID for proper mentions (<@123456789>)
+      # Use Discord user ID for proper mentions (<@123456789>) if configured
       if user.respond_to?(:discord_user_id) && user.discord_user_id.present?
         return "<@#{user.discord_user_id}>"
       end
       
-      # Fallback: use name with bold formatting for visibility
-      formatted_name = user.name.gsub(/\s+/, '') if user.name.present?
-      formatted_name ||= user.login
-      "**@#{formatted_name}**"
+      # Otherwise just display the user's full name (no mention)
+      user.name.present? ? user.name : user.login
     end
 
     def create_mentions_for_users(users)
