@@ -55,7 +55,7 @@ module RedmineMessenger
             # Add estimated hours
             if estimated_hours.present?
               attachment[:fields] << { title: "予定工数",
-                                       value: "#{estimated_hours}h",
+                                       value: format_hours_hm(estimated_hours),
                                        short: true }
             end
             
@@ -202,6 +202,16 @@ module RedmineMessenger
           end
         end
 
+        def format_hours_hm(hours_decimal)
+          return "0:00" if hours_decimal.blank? || hours_decimal == 0
+          
+          total_minutes = (hours_decimal * 60).round
+          hours_part = total_minutes / 60
+          minutes_part = total_minutes % 60
+          
+          "#{hours_part}:#{minutes_part.to_s.rjust(2, '0')}"
+        end
+
         def format_field_change(detail)
           return nil if detail.blank?
           
@@ -228,8 +238,8 @@ module RedmineMessenger
             { title: "開始日", value: "#{old_date} → #{new_date}", short: true }
             
           when 'estimated_hours'
-            old_hours = detail.old_value.present? ? "#{detail.old_value}h" : "未設定"
-            new_hours = detail.value.present? ? "#{detail.value}h" : "未設定"
+            old_hours = detail.old_value.present? ? format_hours_hm(detail.old_value.to_f) : "未設定"
+            new_hours = detail.value.present? ? format_hours_hm(detail.value.to_f) : "未設定"
             { title: "予定工数", value: "#{old_hours} → #{new_hours}", short: true }
             
           when 'assigned_to_id'
