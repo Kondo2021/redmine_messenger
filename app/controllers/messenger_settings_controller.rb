@@ -44,6 +44,8 @@ class MessengerSettingsController < ApplicationController
                                     :post_contact_updates,
                                     :post_private_contacts,
                                     :post_password,
-                                    :post_password_updates
+                                    :post_password_updates,
+                                    :post_time_entries,
+                                    :post_time_entry_updates
   end
 end

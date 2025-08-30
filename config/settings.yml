@@ -24,3 +24,5 @@ post_contact: 0
 post_contact_updates: 0
 post_password: 0
 post_password_updates: 0
+post_time_entries: 1
+post_time_entry_updates: 1

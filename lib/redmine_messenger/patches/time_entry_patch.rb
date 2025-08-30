@@ -23,7 +23,7 @@ module RedmineMessenger
             end
           end
 
-          return unless channels.present? && url
+          return unless channels.present? && url && Messenger.setting_for_project(project, :post_time_entries)
           return if issue&.is_private? && !Messenger.setting_for_project(project, :post_private_issues)
 
           initial_language = ::I18n.locale
@@ -85,7 +85,7 @@ module RedmineMessenger
             end
           end
 
-          return unless channels.present? && url
+          return unless channels.present? && url && Messenger.setting_for_project(project, :post_time_entry_updates)
           return if issue&.is_private? && !Messenger.setting_for_project(project, :post_private_issues)
 
           initial_language = ::I18n.locale

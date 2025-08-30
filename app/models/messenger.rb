@@ -264,7 +264,9 @@ class Messenger
       return nil if user.blank?
       
       # Format name without spaces between first and last name
-      formatted_name = "#{user.firstname}#{user.lastname}"
+      # Use user.name (which combines firstname and lastname) or fall back to login
+      formatted_name = user.name.gsub(/\s+/, '') if user.name.present?
+      formatted_name ||= user.login
       "@#{formatted_name}"
     end
 

@@ -11,6 +11,10 @@ ja:
   label_messenger_outgoing_webhook: Outgoing Webhook
   label_messenger_password_created: "%{project_url} - Password %{url} created by *%{user}*"
   label_messenger_password_updated: "%{project_url} - Password %{url} updated by *%{user}*"
+  label_messenger_time_entry_created: "%{project_url} - 作業時間が *%{user}* によって記録されました"
+  label_messenger_time_entry_updated: "%{project_url} - 作業時間が *%{user}* によって更新されました"
+  label_messenger_time_entry_created_with_issue: "%{project_url} - %{issue_url} の作業時間が *%{user}* によって記録されました"
+  label_messenger_time_entry_updated_with_issue: "%{project_url} - %{issue_url} の作業時間が *%{user}* によって更新されました"
   label_messenger_project_text_field_info: デフォルトの設定を使う場合空欄にしてください。
   label_messenger_setting: メッセンジャーの設定
   label_messenger_settings_disabled: 無効
@@ -33,6 +37,8 @@ ja:
   label_settings_post_db: DB entry added?
   label_settings_post_password_updates: Password updates?
   label_settings_post_password: Password added?
+  label_settings_post_time_entries: 作業時間記録の通知
+  label_settings_post_time_entry_updates: 作業時間更新の通知
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?
   label_settings_post_private_issues: プライベートチケットの更新
