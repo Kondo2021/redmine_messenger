@@ -1,8 +1,5 @@
 p
-  - options = options_for_select([
-      [l(:label_notification_type_discord), 'discord'],
-      [l(:label_notification_type_slack), 'slack']
-    ], @messenger_setting.notification_type || 'discord')
+  - options = options_for_select([[l(:label_notification_type_discord), 'discord'], [l(:label_notification_type_slack), 'slack']], @messenger_setting.notification_type || 'discord')
   = f.select :notification_type, options, { include_blank: l(:label_default) }, { label: l(:label_notification_type) }
   '
   em.info style="display: inline;"
