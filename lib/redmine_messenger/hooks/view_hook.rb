@@ -13,6 +13,10 @@ module RedmineMessenger
             content_tag(:p) do
               form.text_field(:discord_username, size: 30) +
               content_tag(:em, l(:label_discord_username_info), class: 'info')
+            end +
+            content_tag(:p) do
+              form.text_field(:discord_user_id, size: 30) +
+              content_tag(:em, l(:label_discord_user_id_info), class: 'info')
             end
           end
         end
@@ -28,6 +32,10 @@ module RedmineMessenger
             content_tag(:p) do
               form.text_field(:discord_username, size: 30) +
               content_tag(:em, l(:label_discord_username_info), class: 'info')
+            end +
+            content_tag(:p) do
+              form.text_field(:discord_user_id, size: 30) +
+              content_tag(:em, l(:label_discord_user_id_info), class: 'info')
             end
           end
         end

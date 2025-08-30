@@ -41,6 +41,8 @@ ja:
   label_settings_post_time_entry_updates: 作業時間更新の通知
   field_discord_username: Discordユーザー名
   label_discord_username_info: Discord通知用のユーザー名（例：user123）
+  field_discord_user_id: DiscordユーザーID
+  label_discord_user_id_info: Discordの数字のユーザーID（例：123456789012345678）メンション機能に使用されます
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?
   label_settings_post_private_issues: プライベートチケットの更新
