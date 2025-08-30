@@ -95,44 +95,10 @@ module RedmineMessenger
             # Show key changes and comments
             fields = []
             
-            # Add due date change
-            due_date_detail = current_journal.details.find { |d| d.prop_key == 'due_date' }
-            if due_date_detail
-              old_date = due_date_detail.old_value.present? ? format_date(due_date_detail.old_value) : "未設定"
-              new_date = due_date_detail.value.present? ? format_date(due_date_detail.value) : "未設定"
-              fields << { title: "期日",
-                          value: "#{old_date} → #{new_date}",
-                          short: true }
-            end
-            
-            # Add assigned_to change
-            assigned_detail = current_journal.details.find { |d| d.prop_key == 'assigned_to_id' }
-            if assigned_detail
-              old_user = assigned_detail.old_value.present? ? Principal.find_by(id: assigned_detail.old_value)&.name : "未設定"
-              new_user = assigned_detail.value.present? ? Principal.find_by(id: assigned_detail.value)&.name : "未設定"
-              fields << { title: "担当者",
-                          value: "#{old_user} → #{new_user}",
-                          short: true }
-            end
-            
-            # Add progress if changed
-            progress_detail = current_journal.details.find { |d| d.prop_key == 'done_ratio' }
-            if progress_detail
-              old_progress = progress_detail.old_value.present? ? "#{progress_detail.old_value}%" : "0%"
-              new_progress = progress_detail.value.present? ? "#{progress_detail.value}%" : "0%"
-              fields << { title: "進捗率",
-                          value: "#{old_progress} → #{new_progress}",
-                          short: true }
-            end
-            
-            # Add status change
-            status_detail = current_journal.details.find { |d| d.prop_key == 'status_id' }
-            if status_detail
-              old_status = status_detail.old_value.present? ? IssueStatus.find_by(id: status_detail.old_value)&.name : "未設定"
-              new_status = status_detail.value.present? ? IssueStatus.find_by(id: status_detail.value)&.name : "未設定"
-              fields << { title: "ステータス",
-                          value: "#{old_status} → #{new_status}",
-                          short: true }
+            # Process all field changes
+            current_journal.details.each do |detail|
+              field_info = format_field_change(detail)
+              fields << field_info if field_info
             end
             
             # Add comments
@@ -170,6 +136,90 @@ module RedmineMessenger
           rescue
             date_str
           end
+        end
+
+        def format_field_change(detail)
+          return nil if detail.blank?
+          
+          case detail.property
+          when 'attr'
+            format_attribute_change(detail)
+          when 'cf'
+            format_custom_field_change(detail)
+          else
+            nil
+          end
+        end
+
+        def format_attribute_change(detail)
+          case detail.prop_key
+          when 'due_date'
+            old_date = detail.old_value.present? ? format_date(detail.old_value) : "未設定"
+            new_date = detail.value.present? ? format_date(detail.value) : "未設定"
+            { title: "期日", value: "#{old_date} → #{new_date}", short: true }
+            
+          when 'start_date'
+            old_date = detail.old_value.present? ? format_date(detail.old_value) : "未設定"
+            new_date = detail.value.present? ? format_date(detail.value) : "未設定"
+            { title: "開始日", value: "#{old_date} → #{new_date}", short: true }
+            
+          when 'estimated_hours'
+            old_hours = detail.old_value.present? ? "#{detail.old_value}h" : "未設定"
+            new_hours = detail.value.present? ? "#{detail.value}h" : "未設定"
+            { title: "予定工数", value: "#{old_hours} → #{new_hours}", short: true }
+            
+          when 'assigned_to_id'
+            old_user = detail.old_value.present? ? Principal.find_by(id: detail.old_value)&.name : "未設定"
+            new_user = detail.value.present? ? Principal.find_by(id: detail.value)&.name : "未設定"
+            { title: "担当者", value: "#{old_user} → #{new_user}", short: true }
+            
+          when 'done_ratio'
+            old_progress = detail.old_value.present? ? "#{detail.old_value}%" : "0%"
+            new_progress = detail.value.present? ? "#{detail.value}%" : "0%"
+            { title: "進捗率", value: "#{old_progress} → #{new_progress}", short: true }
+            
+          when 'status_id'
+            old_status = detail.old_value.present? ? IssueStatus.find_by(id: detail.old_value)&.name : "未設定"
+            new_status = detail.value.present? ? IssueStatus.find_by(id: detail.value)&.name : "未設定"
+            { title: "ステータス", value: "#{old_status} → #{new_status}", short: true }
+            
+          when 'priority_id'
+            old_priority = detail.old_value.present? ? IssuePriority.find_by(id: detail.old_value)&.name : "未設定"
+            new_priority = detail.value.present? ? IssuePriority.find_by(id: detail.value)&.name : "未設定"
+            { title: "優先度", value: "#{old_priority} → #{new_priority}", short: true }
+            
+          when 'category_id'
+            old_category = detail.old_value.present? ? IssueCategory.find_by(id: detail.old_value)&.name : "未設定"
+            new_category = detail.value.present? ? IssueCategory.find_by(id: detail.value)&.name : "未設定"
+            { title: "カテゴリ", value: "#{old_category} → #{new_category}", short: true }
+            
+          when 'fixed_version_id'
+            old_version = detail.old_value.present? ? Version.find_by(id: detail.old_value)&.name : "未設定"
+            new_version = detail.value.present? ? Version.find_by(id: detail.value)&.name : "未設定"
+            { title: "対象バージョン", value: "#{old_version} → #{new_version}", short: true }
+            
+          when 'subject'
+            old_subject = detail.old_value.present? ? detail.old_value : "未設定"
+            new_subject = detail.value.present? ? detail.value : "未設定"
+            { title: "題名", value: "#{old_subject} → #{new_subject}", short: false }
+            
+          when 'description'
+            # Skip description changes as they're usually too long
+            nil
+            
+          else
+            nil
+          end
+        end
+
+        def format_custom_field_change(detail)
+          custom_field = CustomField.find_by(id: detail.prop_key)
+          return nil unless custom_field
+          
+          old_value = detail.old_value.present? ? detail.old_value : "未設定"
+          new_value = detail.value.present? ? detail.value : "未設定"
+          
+          { title: custom_field.name, value: "#{old_value} → #{new_value}", short: true }
         end
 
         def messenger_to_be_notified
