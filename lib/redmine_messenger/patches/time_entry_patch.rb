@@ -186,7 +186,7 @@ module RedmineMessenger
           if issue.watcher_users.any?
             watcher_mentions = issue.watcher_users.map { |user| Messenger.format_user_mention(user) }.compact
             if watcher_mentions.any?
-              mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}\n\n"
+              mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}\n\n\n"
             end
           end
           
