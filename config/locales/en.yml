@@ -40,6 +40,8 @@ en:
   label_settings_post_password: Password added?
   label_settings_post_time_entries: Time entry notifications?
   label_settings_post_time_entry_updates: Time entry updates?
+  field_discord_username: Discord Username
+  label_discord_username_info: Your Discord username for notifications (e.g., user123)
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?
   label_settings_post_private_issues: Private issue updates?

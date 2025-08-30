@@ -263,8 +263,12 @@ class Messenger
     def format_user_mention(user)
       return nil if user.blank?
       
-      # Format name without spaces between first and last name
-      # Use user.name (which combines firstname and lastname) or fall back to login
+      # Use Discord username if set, otherwise fall back to name without spaces or login
+      if user.discord_username.present?
+        return "@#{user.discord_username}"
+      end
+      
+      # Fallback: use name without spaces or login
       formatted_name = user.name.gsub(/\s+/, '') if user.name.present?
       formatted_name ||= user.login
       "@#{formatted_name}"

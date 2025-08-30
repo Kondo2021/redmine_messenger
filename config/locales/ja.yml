@@ -39,6 +39,8 @@ ja:
   label_settings_post_password: Password added?
   label_settings_post_time_entries: 作業時間記録の通知
   label_settings_post_time_entry_updates: 作業時間更新の通知
+  field_discord_username: Discordユーザー名
+  label_discord_username_info: Discord通知用のユーザー名（例：user123）
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?
   label_settings_post_private_issues: プライベートチケットの更新

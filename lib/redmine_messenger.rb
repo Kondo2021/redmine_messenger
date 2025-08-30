@@ -15,7 +15,8 @@ module RedmineMessenger
       loader.add_patch %w[Issue
                           Project
                           WikiPage
-                          TimeEntry]
+                          TimeEntry
+                          User]
 
       loader.add_patch 'Contact' if RedmineMessenger::REDMINE_CONTACTS_SUPPORT
       loader.add_patch 'DbEntry' if RedmineMessenger::REDMINE_DB_SUPPORT
