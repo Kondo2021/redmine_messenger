@@ -41,9 +41,9 @@ ja:
   label_settings_post_time_entries: 作業時間記録の通知
   label_settings_post_time_entry_updates: 作業時間更新の通知
   field_discord_user_id: Discord ID
-  label_discord_user_id_info: Discordの数字のユーザーID（例：123456789012345678）メンション機能に使用されます。
+  label_discord_user_id_info: "Discordの数字のユーザーID（例：123456789012345678）メンション機能に使用されます。\n取得方法：Discord設定 → 詳細設定 → 開発者モードをON → ユーザーを右クリック → 「ユーザーIDをコピー」"
   field_slack_user_id: Slack ID
-  label_slack_user_id_info: Slackの数字のユーザーID（例：U01234567）メンション機能に使用されます。
+  label_slack_user_id_info: "Slackの数字のユーザーID（例：U01234567）メンション機能に使用されます。\n取得方法：プロフィールをクリック → その他 → メンバーIDをコピー"
   label_notification_type: 通知先
   label_notification_type_discord: Discord
   label_notification_type_slack: Slack
