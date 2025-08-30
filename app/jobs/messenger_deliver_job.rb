@@ -50,7 +50,7 @@ class MessengerDeliverJob < ActiveJob::Base
 
   def convert_to_discord_format(slack_params)
     discord_payload = {
-      content: slack_params[:text]
+      content: convert_slack_links_to_discord(slack_params[:text])
     }
 
     # Add username if specified
@@ -67,14 +67,14 @@ class MessengerDeliverJob < ActiveJob::Base
     if slack_params[:attachments]&.any?
       discord_payload[:embeds] = slack_params[:attachments].map do |attachment|
         embed = {}
-        embed[:description] = attachment[:text] if attachment[:text].present?
+        embed[:description] = convert_slack_links_to_discord(attachment[:text]) if attachment[:text].present?
         
         # Convert fields
         if attachment[:fields]&.any?
           embed[:fields] = attachment[:fields].map do |field|
             {
-              name: field[:title] || field[:name],
-              value: field[:value],
+              name: convert_slack_links_to_discord(field[:title] || field[:name]),
+              value: convert_slack_links_to_discord(field[:value]),
               inline: field[:short] == true
             }
           end
@@ -85,5 +85,12 @@ class MessengerDeliverJob < ActiveJob::Base
     end
 
     discord_payload
+  end
+
+  def convert_slack_links_to_discord(text)
+    return text if text.blank?
+    
+    # Convert Slack format links <URL|title> to Discord format [title](URL)
+    text.gsub(/<([^|>]+)\|([^>]+)>/) { "[#{$2}](#{$1})" }
   end
 end
