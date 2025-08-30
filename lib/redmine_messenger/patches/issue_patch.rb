@@ -186,14 +186,14 @@ module RedmineMessenger
           
           if assigned_to.present? && !assignee_changed
             assignee_mention = Messenger.format_user_mention(assigned_to)
-            mentions << "\n\n担当者: #{assignee_mention}" if assignee_mention.present?
+            mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
           end
           
           # Add watcher mentions with proper label
           if watcher_users.any?
             watcher_mentions = watcher_users.map { |user| Messenger.format_user_mention(user) }.compact
             if watcher_mentions.any?
-              mentions << "\nウォッチャー: #{watcher_mentions.join(' ')}"
+              mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
             end
           end
           
