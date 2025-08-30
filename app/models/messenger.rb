@@ -55,7 +55,7 @@ class Messenger
 
       channels.each do |channel|
         params[:channel] = channel
-        MessengerDeliverJob.perform_later url, params
+        MessengerDeliverJob.perform_later url, params, notification_type
       end
     end
 
