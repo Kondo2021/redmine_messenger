@@ -46,7 +46,7 @@ ja:
   label_slack_user_id_info: Slackの数字のユーザーID（例：U01234567）メンション機能に使用されます
   label_notification_type: 通知先
   label_notification_type_discord: Discord
-  label_notification_type_slack: Slack。
+  label_notification_type_slack: Slack
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?
   label_settings_post_private_issues: プライベートチケットの更新

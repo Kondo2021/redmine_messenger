@@ -312,9 +312,9 @@ class Messenger
         # Remove /slack suffix if it exists (for backward compatibility)
         url.gsub(%r{/slack/?$}, '')
       when 'slack'
-        # For Slack, ensure the URL ends with /slack for Slack-compatible format
-        # Only add /slack if the URL doesn't already end with it
-        url.end_with?('/slack') ? url : "#{url.chomp('/')}/slack"
+        # For Slack, use the native Slack webhook URL directly
+        # Remove /slack suffix if it exists (it's only for Discord's Slack-compatible endpoint)
+        url.gsub(%r{/slack/?$}, '')
       else
         # Default to Discord behavior
         url.gsub(%r{/slack/?$}, '')
