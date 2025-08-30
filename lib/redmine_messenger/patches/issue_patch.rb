@@ -34,16 +34,13 @@ module RedmineMessenger
             if description.present? && Messenger.setting_for_project(project, :new_include_description)
               attachment[:text] = Messenger.markup_format description
             end
-            attachment[:fields] = [{ title: I18n.t(:field_status),
-                                     value: Messenger.markup_format(status.to_s),
-                                     short: true },
-                                   { title: I18n.t(:field_priority),
-                                     value: Messenger.markup_format(priority.to_s),
-                                     short: true }]
-            if assigned_to.present?
-              attachment[:fields] << { title: I18n.t(:field_assigned_to),
-                                       value: Messenger.markup_format(assigned_to.to_s),
-                                       short: true }
+            # Show only essential fields
+            attachment[:fields] = []
+            
+            if done_ratio > 0
+              attachment[:fields] << { title: "進捗率",
+                                       value: "#{done_ratio}%",
+                                       short: false }
             end
 
             attachments.each do |att|
@@ -52,19 +49,18 @@ module RedmineMessenger
                                        short: true }
             end
 
-            if RedmineMessenger.setting?(:display_watchers) && watcher_users.any?
-              attachment[:fields] << {
-                title: I18n.t(:field_watcher),
-                value: Messenger.markup_format(watcher_users.join(', ')),
-                short: true
-              }
-            end
 
-            Messenger.speak l(:label_messenger_issue_created,
-                              project_url: Messenger.project_url_markdown(project),
-                              url: send_messenger_mention_url(project, description),
-                              user: author),
-                            channels, url, attachment: attachment, project: project
+            main_message = l(:label_messenger_issue_created,
+                              project_name: Messenger.markup_format(project.name),
+                              tracker: tracker.name,
+                              url: "<#{Messenger.object_url self}|#{Messenger.markup_format subject}>",
+                              user: Messenger.markup_format(author.to_s))
+            
+            # Add mentions on separate lines
+            mentions = build_mentions_message
+            full_message = "#{main_message}#{mentions}"
+            
+            Messenger.speak full_message, channels, url, attachment: attachment, project: project
           ensure
             ::I18n.locale = initial_language
           end
@@ -96,21 +92,49 @@ module RedmineMessenger
               attachment[:text] = attachment_text if attachment_text.present?
             end
 
-            fields = current_journal.details.map { |d| Messenger.detail_to_field d, project }
+            # Show only key changes and comments
+            fields = []
+            
+            # Add progress if changed
+            progress_detail = current_journal.details.find { |d| d.prop_key == 'done_ratio' }
+            if progress_detail && progress_detail.value.present?
+              fields << { title: "進捗率",
+                          value: "#{progress_detail.value}%",
+                          short: false }
+            end
+            
+            # Add status change
+            status_detail = current_journal.details.find { |d| d.prop_key == 'status_id' }
+            if status_detail && status_detail.value.present?
+              status_obj = IssueStatus.find_by(id: status_detail.value)
+              if status_obj
+                fields << { title: "ステータス",
+                            value: Messenger.markup_format(status_obj.name),
+                            short: true }
+              end
+            end
+            
+            # Add comments
             if current_journal.notes.present?
-              fields << { title: I18n.t(:label_comment),
+              fields << { title: "コメント",
                           value: Messenger.markup_format(current_journal.notes),
                           short: false }
             end
+            
             fields << { title: I18n.t(:field_is_private), short: true } if current_journal.private_notes?
-            fields.compact!
             attachment[:fields] = fields if fields.any?
 
-            Messenger.speak l(:label_messenger_issue_updated,
-                              project_url: Messenger.project_url_markdown(project),
-                              url: send_messenger_mention_url(project, description),
-                              user: current_journal.user),
-                            channels, url, attachment: attachment, project: project
+            main_message = l(:label_messenger_issue_updated,
+                              project_name: Messenger.markup_format(project.name),
+                              tracker: tracker.name,
+                              url: "<#{Messenger.object_url self}#change-#{current_journal.id}|#{Messenger.markup_format subject}>",
+                              user: Messenger.markup_format(current_journal.user.to_s))
+            
+            # Add mentions on separate lines
+            mentions = build_mentions_message
+            full_message = "#{main_message}#{mentions}"
+            
+            Messenger.speak full_message, channels, url, attachment: attachment, project: project
           ensure
             ::I18n.locale = initial_language
           end
@@ -123,26 +147,24 @@ module RedmineMessenger
           to_be_notified.uniq
         end
 
-        def send_messenger_mention_url(project, text)
-          mention_to = ''
-          if Messenger.setting_for_project(project, :auto_mentions) ||
-             Messenger.textfield_for_project(project, :default_mentions).present?
-            mention_to = Messenger.mentions project, text
+        def build_mentions_message
+          mentions = []
+          
+          # Add assignee mention
+          if assigned_to.present?
+            assignee_mention = Messenger.format_user_mention(assigned_to)
+            mentions << "\n\n担当者: #{assignee_mention}" if assignee_mention.present?
           end
-
-          # Add @mentions for assignee and watchers
-          users_to_mention = []
-          users_to_mention << assigned_to if assigned_to.present?
-          users_to_mention += watcher_users if watcher_users.any?
-          user_mentions = Messenger.create_mentions_for_users(users_to_mention)
-
-          full_mention = "#{mention_to}#{user_mentions}"
-
-          if current_journal.nil?
-            "<#{Messenger.object_url self}|#{Messenger.markup_format self}>#{full_mention}"
-          else
-            "<#{Messenger.object_url self}#change-#{current_journal.id}|#{Messenger.markup_format self}>#{full_mention}"
+          
+          # Add watcher mentions
+          if watcher_users.any?
+            watcher_mentions = watcher_users.map { |user| Messenger.format_user_mention(user) }.compact
+            if watcher_mentions.any?
+              mentions << "\nウォッチャー: #{watcher_mentions.join(' ')}"
+            end
           end
+          
+          mentions.join
         end
       end
     end

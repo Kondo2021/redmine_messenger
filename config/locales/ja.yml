@@ -6,8 +6,8 @@ ja:
   label_messenger_db_entry_created: "%{project_url} - DB entry %{url} created by *%{user}*"
   label_messenger_db_entry_updated: "%{project_url} - DB entry %{url} updated by *%{user}*"
   label_messenger_default_not_visible: デフォルトの設定はセキュリティ上の理由により表示されません。
-  label_messenger_issue_created: "%{project_url} - チケット %{url} が *%{user}* によって作成されました。"
-  label_messenger_issue_updated: "%{project_url} - チケット %{url} が *%{user}* によって更新されました。"
+  label_messenger_issue_created: "%{project_name} - %{tracker} %{url} が %{user} によって作成されました。"
+  label_messenger_issue_updated: "%{project_name} - %{tracker} %{url} が %{user} によって更新されました。"
   label_messenger_outgoing_webhook: Outgoing Webhook
   label_messenger_password_created: "%{project_url} - Password %{url} created by *%{user}*"
   label_messenger_password_updated: "%{project_url} - Password %{url} updated by *%{user}*"

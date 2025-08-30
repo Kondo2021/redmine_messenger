@@ -6,8 +6,8 @@ en:
   label_messenger_db_entry_created: "%{project_url} - DB entry %{url} created by *%{user}*"
   label_messenger_db_entry_updated: "%{project_url} - DB entry %{url} updated by *%{user}*"
   label_messenger_default_not_visible: Default setting is not visible for security reasons
-  label_messenger_issue_created: "%{project_url} - Issue %{url} created by *%{user}*"
-  label_messenger_issue_updated: "%{project_url} - Issue %{url} updated by *%{user}*"
+  label_messenger_issue_created: "%{project_name} - %{tracker} %{url} created by %{user}"
+  label_messenger_issue_updated: "%{project_name} - %{tracker} %{url} updated by %{user}"
   label_messenger_outgoing_webhook: Outgoing Webhook
   label_messenger_password_created: "%{project_url} - Password %{url} created by *%{user}*"
   label_messenger_password_updated: "%{project_url} - Password %{url} updated by *%{user}*"
