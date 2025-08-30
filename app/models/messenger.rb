@@ -260,6 +260,21 @@ class Messenger
       names.present? ? " To: #{names.uniq.join ', '}" : nil
     end
 
+    def format_user_mention(user)
+      return nil if user.blank?
+      
+      # Format name without spaces between first and last name
+      formatted_name = "#{user.firstname}#{user.lastname}"
+      "@#{formatted_name}"
+    end
+
+    def create_mentions_for_users(users)
+      return '' if users.blank?
+      
+      mentions = users.compact.map { |user| format_user_mention(user) }.compact
+      mentions.any? ? " #{mentions.join(' ')}" : ''
+    end
+
     private
 
     def object_field_value(klass, id)

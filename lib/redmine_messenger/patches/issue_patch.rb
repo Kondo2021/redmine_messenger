@@ -129,10 +129,19 @@ module RedmineMessenger
              Messenger.textfield_for_project(project, :default_mentions).present?
             mention_to = Messenger.mentions project, text
           end
+
+          # Add @mentions for assignee and watchers
+          users_to_mention = []
+          users_to_mention << assigned_to if assigned_to.present?
+          users_to_mention += watcher_users if watcher_users.any?
+          user_mentions = Messenger.create_mentions_for_users(users_to_mention)
+
+          full_mention = "#{mention_to}#{user_mentions}"
+
           if current_journal.nil?
-            "<#{Messenger.object_url self}|#{Messenger.markup_format self}>#{mention_to}"
+            "<#{Messenger.object_url self}|#{Messenger.markup_format self}>#{full_mention}"
           else
-            "<#{Messenger.object_url self}#change-#{current_journal.id}|#{Messenger.markup_format self}>#{mention_to}"
+            "<#{Messenger.object_url self}#change-#{current_journal.id}|#{Messenger.markup_format self}>#{full_mention}"
           end
         end
       end

@@ -11,6 +11,10 @@ en:
   label_messenger_outgoing_webhook: Outgoing Webhook
   label_messenger_password_created: "%{project_url} - Password %{url} created by *%{user}*"
   label_messenger_password_updated: "%{project_url} - Password %{url} updated by *%{user}*"
+  label_messenger_time_entry_created: "%{project_url} - Time entry logged by *%{user}*"
+  label_messenger_time_entry_updated: "%{project_url} - Time entry updated by *%{user}*"
+  label_messenger_time_entry_created_with_issue: "%{project_url} - Time entry for %{issue_url} logged by *%{user}*"
+  label_messenger_time_entry_updated_with_issue: "%{project_url} - Time entry for %{issue_url} updated by *%{user}*"
   label_messenger_project_text_field_info: Leave it blank for system default.
   label_messenger_setting: Messenger Settings
   label_messenger_settings_disabled: Disabled
