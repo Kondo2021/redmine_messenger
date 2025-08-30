@@ -33,6 +33,11 @@ module RedmineMessenger
             attachment = {}
             attachment[:fields] = []
 
+            # Add spent date
+            attachment[:fields] << { title: "作業日",
+                                     value: Messenger.markup_format(spent_on.to_s),
+                                     short: true }
+
             # Add hours in h:mm format
             hours_formatted = format_hours_hm(hours)
             attachment[:fields] << { title: "作業時間",
@@ -45,11 +50,6 @@ module RedmineMessenger
                                        value: Messenger.markup_format(activity.to_s),
                                        short: true }
             end
-
-            # Add spent date
-            attachment[:fields] << { title: "日付",
-                                     value: Messenger.markup_format(spent_on.to_s),
-                                     short: true }
 
             # Add comments
             if comments.present?
@@ -100,6 +100,11 @@ module RedmineMessenger
             attachment = {}
             attachment[:fields] = []
 
+            # Add spent date
+            attachment[:fields] << { title: "作業日",
+                                     value: Messenger.markup_format(spent_on.to_s),
+                                     short: true }
+
             # Add hours in h:mm format
             hours_formatted = format_hours_hm(hours)
             attachment[:fields] << { title: "作業時間",
@@ -112,11 +117,6 @@ module RedmineMessenger
                                        value: Messenger.markup_format(activity.to_s),
                                        short: true }
             end
-
-            # Add spent date
-            attachment[:fields] << { title: "日付",
-                                     value: Messenger.markup_format(spent_on.to_s),
-                                     short: true }
 
             # Add comments
             if comments.present?
