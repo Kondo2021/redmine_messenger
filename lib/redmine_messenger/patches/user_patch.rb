@@ -8,7 +8,7 @@ module RedmineMessenger
       included do
         include InstanceMethods
         
-        safe_attributes 'discord_user_id'
+        safe_attributes 'discord_user_id', 'slack_user_id'
       end
 
       module InstanceMethods
@@ -16,6 +16,15 @@ module RedmineMessenger
           # Discord uses <@user_id> format for mentions
           if discord_user_id.present?
             "<@#{discord_user_id}>"
+          else
+            nil
+          end
+        end
+
+        def slack_mention
+          # Slack uses <@user_id> format for mentions
+          if slack_user_id.present?
+            "<@#{slack_user_id}>"
           else
             nil
           end

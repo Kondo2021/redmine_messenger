@@ -30,6 +30,16 @@ class Messenger
       url ||= RedmineMessenger.setting :messenger_url
       return if url.blank? || channels.blank?
 
+      # Determine notification type from project settings
+      notification_type = 'discord' # default
+      if options[:project].present?
+        messenger_setting = options[:project].messenger_setting
+        notification_type = messenger_setting&.notification_type || 'discord'
+      end
+
+      # Adjust URL based on notification type
+      url = adjust_webhook_url(url, notification_type)
+
       params = { text: msg, link_names: 1 }
       username = textfield_for_project options[:project], :messenger_username
       params[:username] = username if username.present?
@@ -260,12 +270,26 @@ class Messenger
       names.present? ? " To: #{names.uniq.join ', '}" : nil
     end
 
-    def format_user_mention(user)
+    def format_user_mention(user, project = nil)
       return nil if user.blank?
       
-      # Use Discord user ID for proper mentions (<@123456789>) if configured
-      if user.respond_to?(:discord_user_id) && user.discord_user_id.present?
-        return "<@#{user.discord_user_id}>"
+      # Determine notification type from project settings
+      notification_type = 'discord' # default
+      if project.present?
+        messenger_setting = project.messenger_setting
+        notification_type = messenger_setting&.notification_type || 'discord'
+      end
+      
+      # Use appropriate user ID based on notification type
+      case notification_type
+      when 'slack'
+        if user.respond_to?(:slack_user_id) && user.slack_user_id.present?
+          return "<@#{user.slack_user_id}>"
+        end
+      when 'discord'
+        if user.respond_to?(:discord_user_id) && user.discord_user_id.present?
+          return "<@#{user.discord_user_id}>"
+        end
       end
       
       # Otherwise just display the user's full name (no mention)
@@ -277,6 +301,24 @@ class Messenger
       
       mentions = users.compact.map { |user| format_user_mention(user) }.compact
       mentions.any? ? " #{mentions.join(' ')}" : ''
+    end
+
+    def adjust_webhook_url(url, notification_type)
+      return url if url.blank?
+
+      case notification_type
+      when 'discord'
+        # For Discord, use the native webhook URL directly
+        # Remove /slack suffix if it exists (for backward compatibility)
+        url.gsub(%r{/slack/?$}, '')
+      when 'slack'
+        # For Slack, ensure the URL ends with /slack for Slack-compatible format
+        # Only add /slack if the URL doesn't already end with it
+        url.end_with?('/slack') ? url : "#{url.chomp('/')}/slack"
+      else
+        # Default to Discord behavior
+        url.gsub(%r{/slack/?$}, '')
+      end
     end
 
     private

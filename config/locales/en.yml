@@ -43,6 +43,11 @@ en:
   label_settings_post_time_entry_updates: Time entry updates?
   field_discord_user_id: Discord ID
   label_discord_user_id_info: Your Discord numeric user ID (e.g., 123456789012345678) used for mentions
+  field_slack_user_id: Slack ID
+  label_slack_user_id_info: Your Slack numeric user ID (e.g., U01234567) used for mentions
+  label_notification_type: Notification Type
+  label_notification_type_discord: Discord
+  label_notification_type_slack: Slack
   label_settings_post_private_contacts: Private contacts?
   label_settings_post_private_db: Private DB entries?
   label_settings_post_private_issues: Private issue updates?

@@ -353,7 +353,7 @@ module RedmineMessenger
             if assignee_detail.old_value.present?
               old_assignee = Principal.find_by(id: assignee_detail.old_value)
               if old_assignee
-                old_mention = Messenger.format_user_mention(old_assignee)
+                old_mention = Messenger.format_user_mention(old_assignee, project)
                 assignee_mentions << old_mention if old_mention.present?
               end
             end
@@ -362,7 +362,7 @@ module RedmineMessenger
             if assignee_detail.value.present?
               new_assignee = Principal.find_by(id: assignee_detail.value)
               if new_assignee
-                new_mention = Messenger.format_user_mention(new_assignee)
+                new_mention = Messenger.format_user_mention(new_assignee, project)
                 assignee_mentions << new_mention if new_mention.present?
               end
             end
@@ -372,13 +372,13 @@ module RedmineMessenger
             end
           elsif assigned_to.present?
             # No assignee change - just show current assignee
-            assignee_mention = Messenger.format_user_mention(assigned_to)
+            assignee_mention = Messenger.format_user_mention(assigned_to, project)
             mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
           end
           
           # Add watcher mentions with proper label
           if watcher_users.any?
-            watcher_mentions = watcher_users.map { |user| Messenger.format_user_mention(user) }.compact
+            watcher_mentions = watcher_users.map { |user| Messenger.format_user_mention(user, project) }.compact
             if watcher_mentions.any?
               mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
             end

@@ -178,13 +178,13 @@ module RedmineMessenger
           
           # Add assignee mention
           if issue.assigned_to.present?
-            assignee_mention = Messenger.format_user_mention(issue.assigned_to)
+            assignee_mention = Messenger.format_user_mention(issue.assigned_to, project)
             mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
           end
           
           # Add watcher mentions
           if issue.watcher_users.any?
-            watcher_mentions = issue.watcher_users.map { |user| Messenger.format_user_mention(user) }.compact
+            watcher_mentions = issue.watcher_users.map { |user| Messenger.format_user_mention(user, project) }.compact
             if watcher_mentions.any?
               mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}\n\n\n"
             end

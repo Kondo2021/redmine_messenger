@@ -27,6 +27,7 @@ class MessengerSettingsController < ApplicationController
                                     :messenger_username,
                                     :messenger_verify_ssl,
                                     :messenger_direct_users_messages,
+                                    :notification_type,
                                     :auto_mentions,
                                     :default_mentions,
                                     :display_watchers,
