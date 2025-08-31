@@ -57,7 +57,8 @@ class MessengerDeliverJob < ActiveJob::Base
 
   def convert_to_discord_format(slack_params)
     discord_payload = {
-      content: convert_slack_links_to_discord(slack_params[:text])
+      content: convert_slack_links_to_discord(slack_params[:text]),
+      suppress_embeds: true
     }
 
     # Add username if specified

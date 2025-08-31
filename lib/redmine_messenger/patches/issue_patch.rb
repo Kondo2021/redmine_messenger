@@ -638,8 +638,8 @@ module RedmineMessenger
             { title: "題名", value: "#{old_subject} → #{new_subject}", short: false }
             
           when 'description'
-            # Skip description changes as they're usually too long
-            nil
+            # Show simple description update message instead of full text
+            { title: "説明", value: "説明を更新", short: true }
             
           else
             nil
