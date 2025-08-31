@@ -305,22 +305,33 @@ module RedmineMessenger
         end
 
         def handle_parent_issue_update
-          # Check if this update is only due to a child being added
-          # If the only change is to child issues count or similar internal updates, skip notification
+          # Check if this update is only due to a child being added or other system changes
           
           Rails.logger.info "MESSENGER DEBUG: Checking parent issue update for issue ##{id}"
           Rails.logger.info "MESSENGER DEBUG: Journal details: #{current_journal.details.map { |d| "#{d.prop_key}: #{d.old_value} -> #{d.value}" }.join(', ')}"
           
+          # Check if this issue has children (is a parent issue)
+          has_children = children.any?
+          Rails.logger.info "MESSENGER DEBUG: Issue has children: #{has_children}"
+          
           # If this issue has no meaningful user-facing changes (only system updates), skip
           meaningful_changes = current_journal.details.select do |detail|
-            # Skip internal system changes
-            !['lft', 'rgt', 'root_id'].include?(detail.prop_key)
+            # Skip internal system changes that occur when child issues are added/removed
+            !['lft', 'rgt', 'root_id', 'updated_on'].include?(detail.prop_key)
           end
           
-          # If no meaningful changes and no notes, this is likely an automated update
+          Rails.logger.info "MESSENGER DEBUG: Meaningful changes: #{meaningful_changes.map(&:prop_key).join(', ')}"
+          
+          # If no meaningful changes and no notes, this is likely an automated update (like when a child is added)
           if meaningful_changes.empty? && current_journal.notes.blank?
-            Rails.logger.info "MESSENGER DEBUG: Skipping parent issue update - no meaningful changes"
+            Rails.logger.info "MESSENGER DEBUG: Skipping parent issue update - no meaningful changes (likely child addition)"
             return true
+          end
+          
+          # Additional check: if this is a parent and the only changes are tree-related
+          if has_children && meaningful_changes.all? { |d| ['lft', 'rgt', 'root_id', 'parent_id'].include?(d.prop_key) }
+            Rails.logger.info "MESSENGER DEBUG: Skipping parent issue update - only tree structure changes"
+            return true  
           end
           
           false
