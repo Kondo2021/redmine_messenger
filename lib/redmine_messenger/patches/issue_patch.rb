@@ -299,7 +299,7 @@ module RedmineMessenger
               fields: [
                 {
                   name: "子チケット",
-                  value: "##{id}",
+                  value: "##{id} #{subject}",
                   short: true
                 }
               ]
@@ -559,7 +559,7 @@ module RedmineMessenger
               fields: [
                 {
                   name: "子チケット",
-                  value: "##{id}",
+                  value: "##{id} #{subject}",
                   short: true
                 }
               ]

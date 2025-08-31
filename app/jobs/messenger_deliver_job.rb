@@ -91,14 +91,10 @@ class MessengerDeliverJob < ActiveJob::Base
           
           embed
         end
-      else
-        # Add empty embeds to suppress unwanted link previews
-        discord_payload[:embeds] = []
       end
-    else
-      # Add empty embeds to suppress unwanted link previews
-      discord_payload[:embeds] = []
+      # Note: If no fields, don't add embeds at all (no empty embeds)
     end
+    # Note: If no attachments, don't add embeds at all (no empty embeds)
 
     discord_payload
   end
