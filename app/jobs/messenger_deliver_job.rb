@@ -27,13 +27,10 @@ class MessengerDeliverJob < ActiveJob::Base
         Rails.logger.info JSON.pretty_generate(discord_payload)
       else
         # Slack-compatible format (default)
-        # Add ⚡️ to Slack format text as well
-        params_with_bolt = params.dup
-        params_with_bolt[:text] = "⚡️ #{params[:text]}"
-        req.set_form_data payload: params_with_bolt.to_json
+        req.set_form_data payload: params.to_json
         
         Rails.logger.info "⚡️【JSON送信】Slack互換形式でWebhookを送信:"
-        Rails.logger.info JSON.pretty_generate(params_with_bolt)
+        Rails.logger.info JSON.pretty_generate(params)
       end
       
       Net::HTTP.start uri.hostname, uri.port, http_options do |http|
@@ -60,7 +57,7 @@ class MessengerDeliverJob < ActiveJob::Base
 
   def convert_to_discord_format(slack_params)
     discord_payload = {
-      content: "⚡️ #{convert_slack_links_to_discord(slack_params[:text])}"
+      content: convert_slack_links_to_discord(slack_params[:text])
     }
 
     # Add username if specified
