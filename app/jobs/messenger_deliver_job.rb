@@ -90,7 +90,13 @@ class MessengerDeliverJob < ActiveJob::Base
           
           embed
         end
+      else
+        # Add empty embeds to suppress unwanted link previews
+        discord_payload[:embeds] = []
       end
+    else
+      # Add empty embeds to suppress unwanted link previews
+      discord_payload[:embeds] = []
     end
 
     discord_payload
