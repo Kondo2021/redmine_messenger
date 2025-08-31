@@ -27,10 +27,13 @@ class MessengerDeliverJob < ActiveJob::Base
         Rails.logger.info JSON.pretty_generate(discord_payload)
       else
         # Slack-compatible format (default)
-        req.set_form_data payload: params.to_json
+        # Add ⚡️ to Slack format text as well
+        params_with_bolt = params.dup
+        params_with_bolt[:text] = "⚡️ #{params[:text]}"
+        req.set_form_data payload: params_with_bolt.to_json
         
         Rails.logger.info "⚡️【JSON送信】Slack互換形式でWebhookを送信:"
-        Rails.logger.info JSON.pretty_generate(params)
+        Rails.logger.info JSON.pretty_generate(params_with_bolt)
       end
       
       Net::HTTP.start uri.hostname, uri.port, http_options do |http|
@@ -57,7 +60,7 @@ class MessengerDeliverJob < ActiveJob::Base
 
   def convert_to_discord_format(slack_params)
     discord_payload = {
-      content: convert_slack_links_to_discord(slack_params[:text])
+      content: "⚡️ #{convert_slack_links_to_discord(slack_params[:text])}"
     }
 
     # Add username if specified
@@ -70,14 +73,16 @@ class MessengerDeliverJob < ActiveJob::Base
       discord_payload[:avatar_url] = slack_params[:icon_url]
     end
 
-    # Convert attachments to Discord embeds
+    # Convert attachments to Discord embeds only if they have fields
     if slack_params[:attachments]&.any?
-      discord_payload[:embeds] = slack_params[:attachments].map do |attachment|
-        embed = {}
-        embed[:description] = convert_slack_links_to_discord(attachment[:text]) if attachment[:text].present?
-        
-        # Convert fields
-        if attachment[:fields]&.any?
+      embeds_with_fields = slack_params[:attachments].select { |attachment| attachment[:fields]&.any? }
+      
+      if embeds_with_fields.any?
+        discord_payload[:embeds] = embeds_with_fields.map do |attachment|
+          embed = {}
+          embed[:description] = convert_slack_links_to_discord(attachment[:text]) if attachment[:text].present?
+          
+          # Convert fields
           embed[:fields] = attachment[:fields].map do |field|
             {
               name: convert_slack_links_to_discord(field[:title] || field[:name]),
@@ -85,9 +90,9 @@ class MessengerDeliverJob < ActiveJob::Base
               inline: field[:short] == true
             }
           end
+          
+          embed
         end
-        
-        embed
       end
     end
 
