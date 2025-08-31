@@ -257,8 +257,8 @@ module RedmineMessenger
           begin
             set_language_if_valid Setting.default_language
 
-            parent_url = "<#{Messenger.object_url parent_issue}|##{parent_issue.id} #{Messenger.markup_format parent_issue.subject}>"
-            child_url = "<#{Messenger.object_url self}|##{id} #{Messenger.markup_format subject}>"
+            parent_url = "<#{Messenger.object_url parent_issue}|#{Messenger.markup_format parent_issue.subject}>"
+            child_url = "<#{Messenger.object_url self}|#{Messenger.markup_format subject}>"
             
             main_message = "#{Messenger.markup_format(parent_issue.project.name)} - 親チケット #{parent_url} に 子チケット #{child_url} が #{Messenger.markup_format(current_journal.user.to_s)} によって追加されました。"
             
@@ -270,9 +270,14 @@ module RedmineMessenger
             end
             
             if parent_issue.watcher_users.any?
-              watcher_mentions = parent_issue.watcher_users.map { |user| Messenger.format_user_mention(user, parent_issue.project) }.compact.uniq
+              watcher_mentions = []
+              parent_issue.watcher_users.each do |user|
+                mention = Messenger.format_user_mention(user, parent_issue.project)
+                watcher_mentions << mention if mention.present?
+              end
+              
               if watcher_mentions.any?
-                parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
+                parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.uniq.join(' ')}"
               end
             end
             
@@ -335,8 +340,8 @@ module RedmineMessenger
           begin
             set_language_if_valid Setting.default_language
 
-            parent_url = "<#{Messenger.object_url parent}|##{parent.id} #{Messenger.markup_format parent.subject}>"
-            child_url = "<#{Messenger.object_url self}|##{id} #{Messenger.markup_format subject}>"
+            parent_url = "<#{Messenger.object_url parent}|#{Messenger.markup_format parent.subject}>"
+            child_url = "<#{Messenger.object_url self}|#{Messenger.markup_format subject}>"
             
             main_message = "#{Messenger.markup_format(parent.project.name)} - 親チケット #{parent_url} に 子チケット #{child_url} が #{Messenger.markup_format(author.to_s)} によって追加されました。"
             
@@ -348,9 +353,14 @@ module RedmineMessenger
             end
             
             if parent.watcher_users.any?
-              watcher_mentions = parent.watcher_users.map { |user| Messenger.format_user_mention(user, parent.project) }.compact.uniq
+              watcher_mentions = []
+              parent.watcher_users.each do |user|
+                mention = Messenger.format_user_mention(user, parent.project)
+                watcher_mentions << mention if mention.present?
+              end
+              
               if watcher_mentions.any?
-                parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
+                parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.uniq.join(' ')}"
               end
             end
             
