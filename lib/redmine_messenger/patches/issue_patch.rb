@@ -258,7 +258,7 @@ module RedmineMessenger
             main_message = "#{Messenger.markup_format(parent_issue.project.name)} - 親チケット #{parent_url} に 子チケット #{child_url} が #{Messenger.markup_format(current_journal.user.to_s)} によって追加されました。"
             
             # Add mentions for parent issue
-            parent_mentions = ""
+            parent_mentions = []
             if parent_issue.assigned_to.present?
               assignee_mention = Messenger.format_user_mention(parent_issue.assigned_to, parent_issue.project)
               parent_mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
@@ -271,7 +271,7 @@ module RedmineMessenger
               end
             end
             
-            full_message = "#{main_message}#{parent_mentions}"
+            full_message = "#{main_message}#{parent_mentions.join}"
             
             Rails.logger.info "MESSENGER DEBUG: Final message: #{full_message}"
             
@@ -314,7 +314,7 @@ module RedmineMessenger
             main_message = "#{Messenger.markup_format(parent.project.name)} - 親チケット #{parent_url} に 子チケット #{child_url} が #{Messenger.markup_format(author.to_s)} によって追加されました。"
             
             # Add mentions for parent issue
-            parent_mentions = ""
+            parent_mentions = []
             if parent.assigned_to.present?
               assignee_mention = Messenger.format_user_mention(parent.assigned_to, parent.project)
               parent_mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
@@ -327,7 +327,7 @@ module RedmineMessenger
               end
             end
             
-            full_message = "#{main_message}#{parent_mentions}"
+            full_message = "#{main_message}#{parent_mentions.join}"
             
             Rails.logger.info "MESSENGER DEBUG: Sending parent notification: #{full_message}"
             
