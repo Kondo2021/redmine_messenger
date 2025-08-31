@@ -141,6 +141,11 @@ module RedmineMessenger
             return
           end
           
+          # Check if this is related issue addition  
+          if handle_relation_addition
+            return
+          end
+          
           # Check if this is a parent issue being updated due to child addition
           if handle_parent_issue_update
             return
@@ -289,7 +294,8 @@ module RedmineMessenger
             
             Rails.logger.info "MESSENGER DEBUG: Final message: #{full_message}"
             
-            Messenger.speak full_message, channels, url, attachment: {}, project: parent_issue.project
+            # Send with empty attachment to avoid any extra information
+            Messenger.speak full_message, channels, url, attachment: nil, project: parent_issue.project
           ensure
             ::I18n.locale = initial_language
           end
@@ -318,6 +324,111 @@ module RedmineMessenger
           end
           
           false
+        end
+
+        def handle_relation_addition
+          # Check if a relation was added
+          relation_detail = current_journal.details.find { |d| d.prop_key == 'relations' }
+          return false unless relation_detail && relation_detail.old_value.blank? && relation_detail.value.present?
+
+          Rails.logger.info "MESSENGER DEBUG: Checking relation addition for issue ##{id}"
+          Rails.logger.info "MESSENGER DEBUG: Relation detail: #{relation_detail.old_value} -> #{relation_detail.value}"
+
+          # Parse the relation information (format might vary)
+          # Try to extract relation type and target issue
+          relation_info = parse_relation_info(relation_detail.value)
+          return false unless relation_info
+
+          channels = Messenger.channels_for_project project
+          url = Messenger.url_for_project project
+
+          if Messenger.setting_for_project project, :messenger_direct_users_messages
+            messenger_to_be_notified.each do |user|
+              channels.append "@#{user.login}" unless user == current_journal.user
+            end
+          end
+
+          return false unless channels.present? && url && Messenger.setting_for_project(project, :post_updates)
+          return false if is_private? && !Messenger.setting_for_project(project, :post_private_issues)
+
+          initial_language = ::I18n.locale
+          begin
+            set_language_if_valid Setting.default_language
+
+            current_url = "<#{Messenger.object_url self}|#{Messenger.markup_format subject}>"
+            related_url = "<#{Messenger.object_url relation_info[:issue]}|#{Messenger.markup_format relation_info[:issue].subject}>" if relation_info[:issue]
+            
+            relation_text = get_relation_text(relation_info[:type])
+            main_message = "#{Messenger.markup_format(project.name)} - #{relation_text} #{current_url} と #{related_url} が #{Messenger.markup_format(current_journal.user.to_s)} によって設定されました。"
+            
+            # Add mentions
+            mentions = []
+            if assigned_to.present?
+              assignee_mention = Messenger.format_user_mention(assigned_to, project)
+              mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
+            end
+            
+            if watcher_users.any?
+              watcher_mentions = []
+              watcher_users.each do |user|
+                mention = Messenger.format_user_mention(user, project)
+                watcher_mentions << mention if mention.present?
+              end
+              
+              if watcher_mentions.any?
+                mentions << "\n👁️ ウォッチャー: #{watcher_mentions.uniq.join(' ')}"
+              end
+            end
+            
+            full_message = "#{main_message}#{mentions.join}"
+            
+            Rails.logger.info "MESSENGER DEBUG: Sending relation notification: #{full_message}"
+            
+            Messenger.speak full_message, channels, url, attachment: nil, project: project
+          ensure
+            ::I18n.locale = initial_language
+          end
+          
+          true
+        end
+
+        def parse_relation_info(relation_value)
+          # This is a simplified parser - might need adjustment based on actual Redmine format
+          # Example formats: "relates #123", "blocks #456", "follows #789"
+          return nil if relation_value.blank?
+          
+          # Try to extract relation type and issue number
+          if relation_value.match(/(\w+)\s+#(\d+)/)
+            relation_type = $1
+            issue_id = $2.to_i
+            target_issue = Issue.find_by(id: issue_id)
+            
+            return {
+              type: relation_type,
+              issue: target_issue
+            } if target_issue
+          end
+          
+          nil
+        end
+
+        def get_relation_text(relation_type)
+          case relation_type.to_s.downcase
+          when 'relates', 'related'
+            '関連チケット'
+          when 'blocks', 'blocked'
+            'ブロックチケット'  
+          when 'follows', 'followed'
+            '後続チケット'
+          when 'precedes'
+            '先行チケット'
+          when 'duplicates'
+            '重複チケット'
+          when 'duplicated'
+            '重複元チケット'
+          else
+            '関連チケット'
+          end
         end
 
         def send_parent_notification_if_child
@@ -372,7 +483,8 @@ module RedmineMessenger
             
             Rails.logger.info "MESSENGER DEBUG: Sending parent notification: #{full_message}"
             
-            Messenger.speak full_message, channels, url, attachment: {}, project: parent.project
+            # Send with no attachment to avoid any extra information  
+            Messenger.speak full_message, channels, url, attachment: nil, project: parent.project
           ensure
             ::I18n.locale = initial_language
           end
