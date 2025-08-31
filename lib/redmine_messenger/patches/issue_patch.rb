@@ -181,10 +181,20 @@ module RedmineMessenger
             # Show key changes and comments
             fields = []
             
-            # Process all field changes
+            # Collect field changes for update history
+            field_changes = []
             current_journal.details.each do |detail|
               field_info = format_field_change(detail)
-              fields << field_info if field_info
+              if field_info
+                field_changes << "#{field_info[:title]}: #{field_info[:value]}"
+              end
+            end
+            
+            # Add update history if there are field changes
+            if field_changes.any?
+              fields << { title: "更新履歴",
+                          value: field_changes.join("\n"),
+                          short: false }
             end
             
             # Add comments
