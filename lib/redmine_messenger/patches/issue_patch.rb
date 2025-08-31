@@ -125,6 +125,9 @@ module RedmineMessenger
             full_message = "#{main_message}#{mentions}"
             
             Messenger.speak full_message, channels, url, attachment: attachment, project: project
+            
+            # Also send parent notification if this is a child issue
+            send_parent_notification_if_child
           ensure
             ::I18n.locale = initial_language
           end
@@ -133,14 +136,14 @@ module RedmineMessenger
         def send_messenger_update
           return if current_journal.nil?
           
-          # Skip update notification if this is triggered by a new issue creation
-          # When an issue is created, the id is present in previous_changes
-          return if previous_changes.key?('id')
-
-          # Check if this is a child issue being added to a parent
+          # Check if this is a child issue being added to a parent first
           if handle_child_issue_addition
             return
           end
+          
+          # Skip update notification if this is triggered by a new issue creation
+          # When an issue is created, the id is present in previous_changes
+          return if previous_changes.key?('id')
 
           channels = Messenger.channels_for_project project
           url = Messenger.url_for_project project
@@ -279,6 +282,59 @@ module RedmineMessenger
           
           Rails.logger.info "MESSENGER DEBUG: Child addition notification sent successfully"
           true
+        end
+
+        def send_parent_notification_if_child
+          # Check if this issue has a parent (is a child issue)
+          return unless parent.present?
+
+          Rails.logger.info "MESSENGER DEBUG: Sending parent notification for child issue ##{id} to parent ##{parent.id}"
+
+          # Send notification to parent issue's project channels
+          channels = Messenger.channels_for_project parent.project
+          url = Messenger.url_for_project parent.project
+
+          if Messenger.setting_for_project parent.project, :messenger_direct_users_messages
+            parent_to_be_notified = (parent.notified_users + parent.notified_watchers).compact.uniq
+            parent_to_be_notified.each do |user|
+              channels.append "@#{user.login}" unless user == author
+            end
+          end
+
+          return unless channels.present? && url && Messenger.setting_for_project(parent.project, :post_updates)
+          return if parent.is_private? && !Messenger.setting_for_project(parent.project, :post_private_issues)
+
+          initial_language = ::I18n.locale
+          begin
+            set_language_if_valid Setting.default_language
+
+            parent_url = "<#{Messenger.object_url parent}|##{parent.id} #{Messenger.markup_format parent.subject}>"
+            child_url = "<#{Messenger.object_url self}|##{id} #{Messenger.markup_format subject}>"
+            
+            main_message = "#{Messenger.markup_format(parent.project.name)} - 親チケット #{parent_url} に 子チケット #{child_url} が #{Messenger.markup_format(author.to_s)} によって追加されました。"
+            
+            # Add mentions for parent issue
+            parent_mentions = ""
+            if parent.assigned_to.present?
+              assignee_mention = Messenger.format_user_mention(parent.assigned_to, parent.project)
+              parent_mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
+            end
+            
+            if parent.watcher_users.any?
+              watcher_mentions = parent.watcher_users.map { |user| Messenger.format_user_mention(user, parent.project) }.compact
+              if watcher_mentions.any?
+                parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
+              end
+            end
+            
+            full_message = "#{main_message}#{parent_mentions}"
+            
+            Rails.logger.info "MESSENGER DEBUG: Sending parent notification: #{full_message}"
+            
+            Messenger.speak full_message, channels, url, attachment: {}, project: parent.project
+          ensure
+            ::I18n.locale = initial_language
+          end
         end
 
         private
