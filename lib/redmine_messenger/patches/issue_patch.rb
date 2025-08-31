@@ -132,6 +132,10 @@ module RedmineMessenger
 
         def send_messenger_update
           return if current_journal.nil?
+          
+          # Skip update notification for newly created issues
+          # Check if this is the initial journal entry (creation)
+          return if journals.count == 1
 
           channels = Messenger.channels_for_project project
           url = Messenger.url_for_project project
