@@ -198,8 +198,12 @@ module RedmineMessenger
                               url: "<#{Messenger.object_url self}#change-#{current_journal.id}|#{Messenger.markup_format subject}>",
                               user: Messenger.markup_format(current_journal.user.to_s))
             
-            # Add mentions on separate lines
-            mentions = build_mentions_message
+            # Only add mentions if there are actual field changes or comments
+            mentions = ""
+            if fields.any? || current_journal.notes.present?
+              mentions = build_mentions_message
+            end
+            
             full_message = "#{main_message}#{mentions}"
             
             Messenger.speak full_message, channels, url, attachment: attachment, project: project
@@ -262,7 +266,7 @@ module RedmineMessenger
             
             main_message = "#{Messenger.markup_format(parent_issue.project.name)} - 親チケット #{parent_url} に 子チケット #{child_url} が #{Messenger.markup_format(current_journal.user.to_s)} によって追加されました。"
             
-            # Add mentions for parent issue
+            # Add mentions for parent issue (only these two items)
             parent_mentions = []
             if parent_issue.assigned_to.present?
               assignee_mention = Messenger.format_user_mention(parent_issue.assigned_to, parent_issue.project)
