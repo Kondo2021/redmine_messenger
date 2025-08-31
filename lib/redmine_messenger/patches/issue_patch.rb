@@ -201,26 +201,49 @@ module RedmineMessenger
         end
 
         def handle_child_issue_addition
+          # Debug: log journal details
+          Rails.logger.info "MESSENGER DEBUG: Checking child issue addition for issue ##{id}"
+          Rails.logger.info "MESSENGER DEBUG: Journal details: #{current_journal.details.map { |d| "#{d.prop_key}: #{d.old_value} -> #{d.value}" }.join(', ')}"
+          
           # Check if this issue just got a parent assigned (child issue creation/update)
           parent_detail = current_journal.details.find { |d| d.prop_key == 'parent_id' }
-          return false unless parent_detail && parent_detail.old_value.blank? && parent_detail.value.present?
+          unless parent_detail
+            Rails.logger.info "MESSENGER DEBUG: No parent_id detail found"
+            return false
+          end
+          
+          Rails.logger.info "MESSENGER DEBUG: Parent detail - old: '#{parent_detail.old_value}', new: '#{parent_detail.value}'"
+          
+          # Check if parent was just assigned (old value blank/nil, new value present)
+          unless (parent_detail.old_value.blank? || parent_detail.old_value.nil?) && parent_detail.value.present?
+            Rails.logger.info "MESSENGER DEBUG: Not a new parent assignment"
+            return false
+          end
 
           # Find the parent issue
           parent_issue = Issue.find_by(id: parent_detail.value)
-          return false unless parent_issue
+          unless parent_issue
+            Rails.logger.info "MESSENGER DEBUG: Parent issue not found: #{parent_detail.value}"
+            return false
+          end
+
+          Rails.logger.info "MESSENGER DEBUG: Found parent issue ##{parent_issue.id}: #{parent_issue.subject}"
 
           # Send notification to parent issue's project channels
           channels = Messenger.channels_for_project parent_issue.project
           url = Messenger.url_for_project parent_issue.project
 
           if Messenger.setting_for_project parent_issue.project, :messenger_direct_users_messages
-            parent_issue.messenger_to_be_notified.each do |user|
+            parent_to_be_notified = (parent_issue.notified_users + parent_issue.notified_watchers).compact.uniq
+            parent_to_be_notified.each do |user|
               channels.append "@#{user.login}" unless user == current_journal.user
             end
           end
 
           return false unless channels.present? && url && Messenger.setting_for_project(parent_issue.project, :post_updates)
           return false if parent_issue.is_private? && !Messenger.setting_for_project(parent_issue.project, :post_private_issues)
+
+          Rails.logger.info "MESSENGER DEBUG: Sending child addition notification"
 
           initial_language = ::I18n.locale
           begin
@@ -247,11 +270,14 @@ module RedmineMessenger
             
             full_message = "#{main_message}#{parent_mentions}"
             
+            Rails.logger.info "MESSENGER DEBUG: Final message: #{full_message}"
+            
             Messenger.speak full_message, channels, url, attachment: {}, project: parent_issue.project
           ensure
             ::I18n.locale = initial_language
           end
           
+          Rails.logger.info "MESSENGER DEBUG: Child addition notification sent successfully"
           true
         end
 
