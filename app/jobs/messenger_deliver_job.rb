@@ -22,13 +22,20 @@ class MessengerDeliverJob < ActiveJob::Base
         discord_payload = convert_to_discord_format(params)
         req.content_type = 'application/json'
         req.body = discord_payload.to_json
+        
+        Rails.logger.info "⚡️【JSON送信】Discord Native形式でWebhookを送信:"
+        Rails.logger.info JSON.pretty_generate(discord_payload)
       else
         # Slack-compatible format (default)
         req.set_form_data payload: params.to_json
+        
+        Rails.logger.info "⚡️【JSON送信】Slack互換形式でWebhookを送信:"
+        Rails.logger.info JSON.pretty_generate(params)
       end
       
       Net::HTTP.start uri.hostname, uri.port, http_options do |http|
         response = http.request req
+        Rails.logger.info "【JSON送信】レスポンス: #{response.code} #{response.message}"
         Rails.logger.warn response.inspect unless [Net::HTTPSuccess, Net::HTTPRedirection, Net::HTTPOK].include? response
       end
     rescue StandardError => e
