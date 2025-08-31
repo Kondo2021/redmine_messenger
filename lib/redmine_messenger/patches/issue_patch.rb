@@ -305,35 +305,81 @@ module RedmineMessenger
         end
 
         def handle_parent_issue_update
-          # Check if this update is only due to a child being added or other system changes
+          Rails.logger.info "【Discord通知】===== 親チケット更新分析開始 ====="
+          Rails.logger.info "【Discord通知】チケット ##{id}: #{subject}"
+          Rails.logger.info "【Discord通知】プロジェクト: #{project.name}"
+          Rails.logger.info "【Discord通知】トラッカー: #{tracker.name}"
+          Rails.logger.info "【Discord通知】ステータス: #{status.name}"
+          Rails.logger.info "【Discord通知】担当者: #{assigned_to&.name || 'なし'}"
+          Rails.logger.info "【Discord通知】作成者: #{author.name}"
+          Rails.logger.info "【Discord通知】作成日時: #{created_on}"
+          Rails.logger.info "【Discord通知】更新日時: #{updated_on}"
           
-          Rails.logger.info "MESSENGER DEBUG: Checking parent issue update for issue ##{id}"
-          Rails.logger.info "MESSENGER DEBUG: Journal details: #{current_journal.details.map { |d| "#{d.prop_key}: #{d.old_value} -> #{d.value}" }.join(', ')}"
+          Rails.logger.info "【Discord通知】----- ジャーナル情報 -----"
+          Rails.logger.info "【Discord通知】ジャーナルID: #{current_journal.id}"
+          Rails.logger.info "【Discord通知】更新者: #{current_journal.user.name}"
+          Rails.logger.info "【Discord通知】更新日時: #{current_journal.created_on}"
+          Rails.logger.info "【Discord通知】コメント: '#{current_journal.notes}'"
+          Rails.logger.info "【Discord通知】コメントあり: #{current_journal.notes.present? ? 'はい' : 'いいえ'}"
           
-          # Check if this issue has children (is a parent issue)
-          has_children = children.any?
-          Rails.logger.info "MESSENGER DEBUG: Issue has children: #{has_children}"
-          
-          # If this issue has no meaningful user-facing changes (only system updates), skip
-          meaningful_changes = current_journal.details.select do |detail|
-            # Skip internal system changes that occur when child issues are added/removed
-            !['lft', 'rgt', 'root_id', 'updated_on'].include?(detail.prop_key)
+          Rails.logger.info "【Discord通知】----- フィールド変更詳細 -----"
+          Rails.logger.info "【Discord通知】変更総数: #{current_journal.details.count}件"
+          current_journal.details.each_with_index do |detail, index|
+            Rails.logger.info "【Discord通知】変更#{index + 1}:"
+            Rails.logger.info "【Discord通知】  種類: #{detail.property}"
+            Rails.logger.info "【Discord通知】  フィールド: #{detail.prop_key}"
+            Rails.logger.info "【Discord通知】  変更前: '#{detail.old_value}'"
+            Rails.logger.info "【Discord通知】  変更後: '#{detail.value}'"
           end
           
-          Rails.logger.info "MESSENGER DEBUG: Meaningful changes: #{meaningful_changes.map(&:prop_key).join(', ')}"
+          has_children = children.any?
+          children_count = children.count
+          Rails.logger.info "【Discord通知】----- 親子関係分析 -----"
+          Rails.logger.info "【Discord通知】子チケットあり: #{has_children ? 'はい' : 'いいえ'}"
+          Rails.logger.info "【Discord通知】子チケット数: #{children_count}件"
+          Rails.logger.info "【Discord通知】親チケットID: #{parent_id || 'なし'}"
           
-          # If no meaningful changes and no notes, this is likely an automated update (like when a child is added)
-          if meaningful_changes.empty? && current_journal.notes.blank?
-            Rails.logger.info "MESSENGER DEBUG: Skipping parent issue update - no meaningful changes (likely child addition)"
+          if has_children
+            Rails.logger.info "【Discord通知】子チケット一覧:"
+            children.each do |child|
+              Rails.logger.info "【Discord通知】  - ##{child.id}: #{child.subject} (#{child.status.name})"
+            end
+          end
+          
+          system_fields = ['lft', 'rgt', 'root_id', 'updated_on']
+          meaningful_changes = current_journal.details.select do |detail|
+            !system_fields.include?(detail.prop_key)
+          end
+          
+          Rails.logger.info "【Discord通知】----- 変更内容分析 -----"
+          Rails.logger.info "【Discord通知】システムフィールド: #{system_fields.join(', ')}"
+          Rails.logger.info "【Discord通知】全変更フィールド: #{current_journal.details.map(&:prop_key).join(', ')}"
+          Rails.logger.info "【Discord通知】ユーザー変更フィールド: #{meaningful_changes.map(&:prop_key).join(', ')}"
+          Rails.logger.info "【Discord通知】システム変更のみ: #{current_journal.details.all? { |d| system_fields.include?(d.prop_key) } ? 'はい' : 'いいえ'}"
+          
+          Rails.logger.info "【Discord通知】----- 判定ロジック -----"
+          no_meaningful_changes = meaningful_changes.empty?
+          no_notes = current_journal.notes.blank?
+          tree_only_changes = has_children && meaningful_changes.all? { |d| ['lft', 'rgt', 'root_id', 'parent_id'].include?(d.prop_key) }
+          
+          Rails.logger.info "【Discord通知】ユーザー変更なし: #{no_meaningful_changes ? 'はい' : 'いいえ'}"
+          Rails.logger.info "【Discord通知】コメントなし: #{no_notes ? 'はい' : 'いいえ'}"
+          Rails.logger.info "【Discord通知】ツリー構造変更のみ: #{tree_only_changes ? 'はい' : 'いいえ'}"
+          
+          if no_meaningful_changes && no_notes
+            Rails.logger.info "【Discord通知】判定結果: 通知スキップ - ユーザー変更なし（子チケット追加による自動更新の可能性）"
+            Rails.logger.info "【Discord通知】===== 分析終了 ====="
             return true
           end
           
-          # Additional check: if this is a parent and the only changes are tree-related
-          if has_children && meaningful_changes.all? { |d| ['lft', 'rgt', 'root_id', 'parent_id'].include?(d.prop_key) }
-            Rails.logger.info "MESSENGER DEBUG: Skipping parent issue update - only tree structure changes"
+          if tree_only_changes
+            Rails.logger.info "【Discord通知】判定結果: 通知スキップ - ツリー構造変更のみ"
+            Rails.logger.info "【Discord通知】===== 分析終了 ====="
             return true  
           end
           
+          Rails.logger.info "【Discord通知】判定結果: 通知実行 - 意味のある変更を検出"
+          Rails.logger.info "【Discord通知】===== 分析終了 ====="
           false
         end
 
