@@ -141,6 +141,11 @@ module RedmineMessenger
             return
           end
           
+          # Check if this is a parent issue being updated due to child addition
+          if handle_parent_issue_update
+            return
+          end
+          
           # Skip update notification if this is triggered by a new issue creation
           # When an issue is created, the id is present in previous_changes
           return if previous_changes.key?('id')
@@ -265,7 +270,7 @@ module RedmineMessenger
             end
             
             if parent_issue.watcher_users.any?
-              watcher_mentions = parent_issue.watcher_users.map { |user| Messenger.format_user_mention(user, parent_issue.project) }.compact
+              watcher_mentions = parent_issue.watcher_users.map { |user| Messenger.format_user_mention(user, parent_issue.project) }.compact.uniq
               if watcher_mentions.any?
                 parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
               end
@@ -282,6 +287,28 @@ module RedmineMessenger
           
           Rails.logger.info "MESSENGER DEBUG: Child addition notification sent successfully"
           true
+        end
+
+        def handle_parent_issue_update
+          # Check if this update is only due to a child being added
+          # If the only change is to child issues count or similar internal updates, skip notification
+          
+          Rails.logger.info "MESSENGER DEBUG: Checking parent issue update for issue ##{id}"
+          Rails.logger.info "MESSENGER DEBUG: Journal details: #{current_journal.details.map { |d| "#{d.prop_key}: #{d.old_value} -> #{d.value}" }.join(', ')}"
+          
+          # If this issue has no meaningful user-facing changes (only system updates), skip
+          meaningful_changes = current_journal.details.select do |detail|
+            # Skip internal system changes
+            !['lft', 'rgt', 'root_id'].include?(detail.prop_key)
+          end
+          
+          # If no meaningful changes and no notes, this is likely an automated update
+          if meaningful_changes.empty? && current_journal.notes.blank?
+            Rails.logger.info "MESSENGER DEBUG: Skipping parent issue update - no meaningful changes"
+            return true
+          end
+          
+          false
         end
 
         def send_parent_notification_if_child
@@ -321,7 +348,7 @@ module RedmineMessenger
             end
             
             if parent.watcher_users.any?
-              watcher_mentions = parent.watcher_users.map { |user| Messenger.format_user_mention(user, parent.project) }.compact
+              watcher_mentions = parent.watcher_users.map { |user| Messenger.format_user_mention(user, parent.project) }.compact.uniq
               if watcher_mentions.any?
                 parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
               end
