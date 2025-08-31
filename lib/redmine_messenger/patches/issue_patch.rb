@@ -133,9 +133,14 @@ module RedmineMessenger
         def send_messenger_update
           return if current_journal.nil?
           
-          # Skip update notification for newly created issues
-          # Check if this is the initial journal entry (creation)
-          return if journals.count == 1
+          # Skip update notification if this is triggered by a new issue creation
+          # When an issue is created, the id is present in previous_changes
+          return if previous_changes.key?('id')
+
+          # Check if this is a child issue being added to a parent
+          if handle_child_issue_addition
+            return
+          end
 
           channels = Messenger.channels_for_project project
           url = Messenger.url_for_project project
@@ -193,6 +198,61 @@ module RedmineMessenger
           ensure
             ::I18n.locale = initial_language
           end
+        end
+
+        def handle_child_issue_addition
+          # Check if this issue just got a parent assigned (child issue creation/update)
+          parent_detail = current_journal.details.find { |d| d.prop_key == 'parent_id' }
+          return false unless parent_detail && parent_detail.old_value.blank? && parent_detail.value.present?
+
+          # Find the parent issue
+          parent_issue = Issue.find_by(id: parent_detail.value)
+          return false unless parent_issue
+
+          # Send notification to parent issue's project channels
+          channels = Messenger.channels_for_project parent_issue.project
+          url = Messenger.url_for_project parent_issue.project
+
+          if Messenger.setting_for_project parent_issue.project, :messenger_direct_users_messages
+            parent_issue.messenger_to_be_notified.each do |user|
+              channels.append "@#{user.login}" unless user == current_journal.user
+            end
+          end
+
+          return false unless channels.present? && url && Messenger.setting_for_project(parent_issue.project, :post_updates)
+          return false if parent_issue.is_private? && !Messenger.setting_for_project(parent_issue.project, :post_private_issues)
+
+          initial_language = ::I18n.locale
+          begin
+            set_language_if_valid Setting.default_language
+
+            parent_url = "<#{Messenger.object_url parent_issue}|##{parent_issue.id} #{Messenger.markup_format parent_issue.subject}>"
+            child_url = "<#{Messenger.object_url self}|##{id} #{Messenger.markup_format subject}>"
+            
+            main_message = "#{Messenger.markup_format(parent_issue.project.name)} - 親チケット #{parent_url} に 子チケット #{child_url} が #{Messenger.markup_format(current_journal.user.to_s)} によって追加されました。"
+            
+            # Add mentions for parent issue
+            parent_mentions = ""
+            if parent_issue.assigned_to.present?
+              assignee_mention = Messenger.format_user_mention(parent_issue.assigned_to, parent_issue.project)
+              parent_mentions << "\n\n👤 担当者: #{assignee_mention}" if assignee_mention.present?
+            end
+            
+            if parent_issue.watcher_users.any?
+              watcher_mentions = parent_issue.watcher_users.map { |user| Messenger.format_user_mention(user, parent_issue.project) }.compact
+              if watcher_mentions.any?
+                parent_mentions << "\n👁️ ウォッチャー: #{watcher_mentions.join(' ')}"
+              end
+            end
+            
+            full_message = "#{main_message}#{parent_mentions}"
+            
+            Messenger.speak full_message, channels, url, attachment: {}, project: parent_issue.project
+          ensure
+            ::I18n.locale = initial_language
+          end
+          
+          true
         end
 
         private
