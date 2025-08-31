@@ -305,6 +305,13 @@ module RedmineMessenger
         end
 
         def handle_parent_issue_update
+          # まず子チケットがあるかチェック
+          has_children = children.any?
+          unless has_children
+            Rails.logger.info "【Discord通知】子チケットなし - 親チケット更新チェックをスキップ"
+            return false
+          end
+          
           Rails.logger.info "【Discord通知】===== 親チケット更新分析開始 ====="
           Rails.logger.info "【Discord通知】チケット ##{id}: #{subject}"
           Rails.logger.info "【Discord通知】プロジェクト: #{project.name}"
@@ -332,18 +339,15 @@ module RedmineMessenger
             Rails.logger.info "【Discord通知】  変更後: '#{detail.value}'"
           end
           
-          has_children = children.any?
           children_count = children.count
           Rails.logger.info "【Discord通知】----- 親子関係分析 -----"
-          Rails.logger.info "【Discord通知】子チケットあり: #{has_children ? 'はい' : 'いいえ'}"
+          Rails.logger.info "【Discord通知】子チケットあり: はい"
           Rails.logger.info "【Discord通知】子チケット数: #{children_count}件"
           Rails.logger.info "【Discord通知】親チケットID: #{parent_id || 'なし'}"
           
-          if has_children
-            Rails.logger.info "【Discord通知】子チケット一覧:"
-            children.each do |child|
-              Rails.logger.info "【Discord通知】  - ##{child.id}: #{child.subject} (#{child.status.name})"
-            end
+          Rails.logger.info "【Discord通知】子チケット一覧:"
+          children.each do |child|
+            Rails.logger.info "【Discord通知】  - ##{child.id}: #{child.subject} (#{child.status.name})"
           end
           
           system_fields = ['lft', 'rgt', 'root_id', 'updated_on']
