@@ -294,8 +294,18 @@ module RedmineMessenger
             
             Rails.logger.info "MESSENGER DEBUG: Final message: #{full_message}"
             
-            # Send with empty attachment to avoid any extra information
-            Messenger.speak full_message, channels, url, attachment: nil, project: parent_issue.project
+            # Create attachment with child ticket info in embed format
+            attachment = {
+              fields: [
+                {
+                  name: "子チケット",
+                  value: "##{id}",
+                  short: true
+                }
+              ]
+            }
+            
+            Messenger.speak full_message, channels, url, attachment: attachment, project: parent_issue.project
           ensure
             ::I18n.locale = initial_language
           end
@@ -544,8 +554,18 @@ module RedmineMessenger
             
             Rails.logger.info "MESSENGER DEBUG: Sending parent notification: #{full_message}"
             
-            # Send with no attachment to avoid any extra information  
-            Messenger.speak full_message, channels, url, attachment: nil, project: parent.project
+            # Create attachment with child ticket info in embed format
+            attachment = {
+              fields: [
+                {
+                  name: "子チケット",
+                  value: "##{id}",
+                  short: true
+                }
+              ]
+            }
+            
+            Messenger.speak full_message, channels, url, attachment: attachment, project: parent.project
           ensure
             ::I18n.locale = initial_language
           end
